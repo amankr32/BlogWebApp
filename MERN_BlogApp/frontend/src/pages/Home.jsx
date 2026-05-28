@@ -12,7 +12,7 @@ const Home = () => {
       <div className="max-w-5xl mx-auto px-6 py-20 text-center animate-fade-in">
         <div className="inline-flex items-center gap-2 bg-zinc-900/80 backdrop-blur-md border border-saas-border text-xs px-3 py-1.5 rounded-full font-mono text-gray-300 mb-8 shadow-premium">
           <span className="w-1.5 h-1.5 rounded-full bg-saas-brand animate-pulse" />
-          Nexus Production Core Engine 2.0 Active
+          Blogify Production Core Engine 2.0 Active
         </div>
         
         <h1 className="font-sans text-5xl md:text-7xl font-bold tracking-tight text-white mb-8 max-w-4xl mx-auto leading-[1.05]">
