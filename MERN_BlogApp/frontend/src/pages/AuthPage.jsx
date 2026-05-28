@@ -44,10 +44,10 @@ const AuthPage = ({ isRegister }) => {
         <form onSubmit={handleSubmit} className="space-y-4 font-mono text-xs">
           {isRegister && (
             <div>
-              <label className="block text-saas-muted font-medium mb-1.5 uppercase tracking-wider">Node Alias</label>
+              <label className="block text-saas-muted font-medium mb-1.5 uppercase tracking-wider">Username</label>
               <div className="relative">
                 <input 
-                  type="text" required placeholder="operator_alpha"
+                  type="text" required placeholder="Aman"
                   className="w-full bg-saas-bg border border-saas-border rounded-lg px-3 py-2.5 font-sans text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-all duration-200"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
@@ -57,10 +57,10 @@ const AuthPage = ({ isRegister }) => {
           )}
 
           <div>
-            <label className="block text-saas-muted font-medium mb-1.5 uppercase tracking-wider">Gateway Email</label>
+            <label className="block text-saas-muted font-medium mb-1.5 uppercase tracking-wider">Email</label>
             <div className="relative">
               <input 
-                type="email" required placeholder="operator@nexus.network"
+                type="email" required placeholder="aman@blogify.com"
                 className="w-full bg-saas-bg border border-saas-border rounded-lg px-3 py-2.5 font-sans text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-all duration-200"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -69,7 +69,7 @@ const AuthPage = ({ isRegister }) => {
           </div>
 
           <div>
-            <label className="block text-saas-muted font-medium mb-1.5 uppercase tracking-wider">Access Secret</label>
+            <label className="block text-saas-muted font-medium mb-1.5 uppercase tracking-wider">Password</label>
             <div className="relative">
               <input 
                 type="password" required minLength={6} placeholder="••••••••"

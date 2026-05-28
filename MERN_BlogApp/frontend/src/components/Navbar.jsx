@@ -17,7 +17,7 @@ const Navbar = () => {
           <div className="w-7 h-7 rounded-lg bg-white text-black flex items-center justify-center group-hover:scale-105 duration-300 shadow-glow">
             <Command size={14} className="stroke-[2.5]" />
           </div>
-          <span className="font-semibold tracking-tight text-base">NEXUS</span>
+          <span className="font-semibold tracking-tight text-base">BLOGIFY</span>
         </Link>
 
         <div className="flex items-center gap-6">

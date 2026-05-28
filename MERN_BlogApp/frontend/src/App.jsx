@@ -12,6 +12,9 @@ import AuthPage from './pages/AuthPage';
 import BlogForm from './pages/BlogForm';
 import Dashboard from './pages/Dashboard';
 
+// SNIPPET 1: Imported Public Member Profile Page View
+import UserProfile from './pages/UserProfile';
+
 // Secure route injection interceptor guard
 const ProtectedRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
@@ -30,6 +33,9 @@ const AppRoutes = () => {
           <Route path="/blog/:slug" element={<SingleBlog />} />
           <Route path="/login" element={<AuthPage isRegister={false} />} />
           <Route path="/register" element={<AuthPage isRegister={true} />} />
+          
+          {/* SNIPPET 2: Integrated Dynamic Public Profile Route Parameter */}
+          <Route path="/profile/:username" element={<UserProfile />} />
 
           {/* Secure Route intercept guards */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
