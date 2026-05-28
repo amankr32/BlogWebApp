@@ -1,0 +1,147 @@
+@import "tailwindcss";
+/* Fixed: Placed immediately at the top before @theme or utilities */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Lora:ital,wght@0,400;0,600;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+@theme {
+  /* Premium Design Variables mapped correctly */
+  --color-saas-bg: #050505;
+  --color-saas-surface: #0f0f12;
+  --color-saas-card: #16161a;
+  --color-saas-border: rgba(255, 255, 255, 0.07);
+  --color-saas-brand: #6366f1;
+  --color-saas-muted: #8f8f99;
+  
+  --font-sans: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  --font-serif: 'Lora', 'Merriweather', serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  
+  --breakpoint-3xl: 1920px;
+  
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --shadow-premium: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 4px 12px rgba(0, 0, 0, 0.5);
+
+  --animate-shimmer: shimmer 2s infinite linear;
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+}
+
+/* Rest of your CSS file remains exactly the same... */
+
+/* --- Base Standard Styling Reset --- */
+@layer base {
+  html, body {
+    background-color: var(--color-saas-bg);
+    color: var(--color-gray-200);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+}
+
+body::selection {
+  background-color: var(--color-saas-brand);
+  color: #ffffff;
+}
+
+/* --- Medium & Notion Premium Typography Layout Rules --- */
+@utility prose-content {
+  font-family: var(--font-serif);
+  font-size: 1.125rem;
+  line-height: 1.8;
+  color: var(--color-gray-300);
+
+  & h1, & h2, & h3 {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.025em;
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+  }
+  & h2 {
+    font-size: 1.5rem;
+    border-bottom: 1px solid var(--color-saas-border);
+    padding-bottom: 0.5rem;
+    @media (min-width: 768px) { font-size: 1.875rem; }
+  }
+  & p { margin-bottom: 1.5rem; }
+  & code {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    background-color: var(--color-zinc-900);
+    border: 1px solid var(--color-saas-border);
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    color: var(--color-saas-brand);
+  }
+}
+
+/* --- Linear/Vercel Premium Global Utility Components --- */
+@utility glass-panel {
+  background-color: color-mix(in srgb, var(--color-saas-surface) 70%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-saas-border);
+  box-shadow: var(--shadow-glass);
+}
+
+@utility btn-premium {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  items-center: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-saas-border);
+  background-color: #ffffff;
+  color: #000000;
+  box-shadow: var(--shadow-premium);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover { background-color: var(--color-neutral-200); }
+  &:active { transform: scale(0.98); }
+}
+
+@utility btn-secondary {
+  display: inline-flex;
+  items-center: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-saas-border);
+  background-color: var(--color-saas-surface);
+  color: var(--color-gray-300);
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: #ffffff;
+    background-color: var(--color-zinc-900);
+  }
+  &:active { transform: scale(0.98); }
+}
+
+@utility skeleton {
+  background: linear-gradient(90deg, #16161A 25%, #22222A 50%, #16161A 75%);
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+  border-radius: 0.5rem;
+}
+
+/* --- Custom Native Webkit Scrollbar Track Elements --- */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #050505; }
+::-webkit-scrollbar-thumb { background: #222226; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #2C2C35; }
