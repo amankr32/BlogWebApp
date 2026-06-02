@@ -58,7 +58,7 @@ const Blogs = () => {
     if (category !== "All") p.category = category;
     if (page > 1) p.page = page;
     setSearchParams(p, { replace: true });
-  }, [debouncedSearch, category, page]);
+  }, [debouncedSearch, category, page, setSearchParams]);
 
   const handleCategory = (cat) => {
     setCategory(cat);

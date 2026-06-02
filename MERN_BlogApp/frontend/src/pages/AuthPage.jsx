@@ -74,7 +74,7 @@ const AuthPage = ({ isRegister }) => {
 
   useEffect(() => {
     if (user) navigate("/dashboard", { replace: true });
-  }, [user]);
+  }, [user, navigate]);
 
   const set = (f) => (e) => {
     setForm((p) => ({ ...p, [f]: e.target.value }));

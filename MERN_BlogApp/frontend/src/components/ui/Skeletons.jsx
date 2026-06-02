@@ -1,3 +1,4 @@
+// Skeleton base
 const S = ({ className = "" }) => <div className={`skeleton ${className}`} />;
 
 export const BlogCardSkeleton = () => (

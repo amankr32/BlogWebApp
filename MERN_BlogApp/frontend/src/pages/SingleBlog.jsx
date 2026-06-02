@@ -108,7 +108,7 @@ const SingleBlog = () => {
       }
     };
     load();
-  }, [slug, user]);
+  }, [slug, user, navigate]);
 
   const handleLike = async () => {
     if (!user) {

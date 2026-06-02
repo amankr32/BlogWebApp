@@ -1,21 +1,19 @@
-import { useContext } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthContext, AuthProvider } from './context/AuthContext';
-import { Toaster } from 'react-hot-toast';
+import { useContext } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthContext, AuthProvider } from "./context/AuthContext";
+import { Toaster } from "react-hot-toast";
 
-// Component layout matrices
-import Navbar from './components/Navbar';
-import Home from './pages/Home';
-import Blogs from './pages/Blogs';
-import SingleBlog from './pages/SingleBlog';
-import AuthPage from './pages/AuthPage';
-import BlogForm from './pages/BlogCard';
-import Dashboard from './pages/Dashboard';
+// Layout
+import Navbar from "./components/layout/Navbar";
+import Footer from "./components/layout/Footer";
 
-// SNIPPET 1: Imported Public Member Profile Page View
-import UserProfile from './pages/UserProfile';
+// Pages
+import Home from "./pages/Home";
+import Blogs from "./pages/Blogs";
+import SingleBlog from "./pages/SingleBlog";
+import AuthPage from "./pages/AuthPage";
 
-// Secure route injection interceptor guard
+// Secure route guard
 const ProtectedRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
   return user ? children : <Navigate to="/login" replace />;
@@ -27,26 +25,28 @@ const AppRoutes = () => {
       <Navbar />
       <main className="flex-grow">
         <Routes>
-          {/* Public Routing Infrastructure Vector mappings */}
+          {/* Public routes */}
           <Route path="/" element={<Home />} />
           <Route path="/blogs" element={<Blogs />} />
           <Route path="/blog/:slug" element={<SingleBlog />} />
           <Route path="/login" element={<AuthPage isRegister={false} />} />
           <Route path="/register" element={<AuthPage isRegister={true} />} />
-          
-          {/* SNIPPET 2: Integrated Dynamic Public Profile Route Parameter */}
-          <Route path="/profile/:username" element={<UserProfile />} />
 
-          {/* Secure Route intercept guards */}
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/create" element={<ProtectedRoute><BlogForm isEdit={false} /></ProtectedRoute>} />
-          <Route path="/edit/:id" element={<ProtectedRoute><BlogForm isEdit={true} /></ProtectedRoute>} />
-          
-          {/* Missing path fallback fallback vector */}
+          {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-      <Toaster position="bottom-right" toastOptions={{ style: { background: '#1A1A1A', color: '#FFF', border: '1px solid #2C2C2C' } }} />
+      <Footer />
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: "#1A1A1A",
+            color: "#FFF",
+            border: "1px solid #2C2C2C",
+          },
+        }}
+      />
     </div>
   );
 };

@@ -11,8 +11,6 @@ import {
   User,
   Search,
   X,
-  Moon,
-  Sun,
   BookmarkCheck,
   ChevronDown,
   Menu,
@@ -30,10 +28,6 @@ const Navbar = () => {
   const [searching, setSearching] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
-  const [darkMode, setDarkMode] = useState(
-    () => localStorage.getItem("theme") !== "light",
-  );
-
   const debouncedQ = useDebounce(searchQ, 400);
   const searchRef = useOutsideClick(() => {
     setSearchOpen(false);
@@ -259,7 +253,7 @@ const Navbar = () => {
                     icon: LayoutDashboard,
                     label: "Dashboard",
                   },
-                  { to: "/bookmarks", icon: BookmarkCheck, label: "Bookmarks" },
+                  { to: "/dashboard", icon: BookmarkCheck, label: "Bookmarks" },
                 ].map(({ to, icon: Icon, label }) => (
                   <Link
                     key={to}
