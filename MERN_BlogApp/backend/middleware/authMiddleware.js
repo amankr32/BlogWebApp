@@ -1,34 +1,52 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import asyncHandler from '../utils/asyncHandler.js';
 
-// Ensure all three arguments (req, res, next) are present in this exact position and order
-export const protect = async (req, res, next) => {
+export const protect = asyncHandler(async (req, res, next) => {
   let token;
-
-  // Check for Token inside standard Authorization Bearer headers
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+  if (req.headers.authorization?.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   }
 
   if (!token) {
-    return res.status(401).json({ message: 'Authorization denied. Access token required.' });
+    res.status(401);
+    throw new Error('Not authorized, no token');
   }
 
-  try {
-    // Decode payload using environment key
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  req.user = await User.findById(decoded.id).select('-password');
 
-    // Attach user object instance (minus password string) to request payload lifecycle
-    req.user = await User.findById(decoded.id).select('-password');
-    
-    if (!req.user) {
-      return res.status(401).json({ message: 'User reference attached to token no longer exists.' });
+  if (!req.user) {
+    res.status(401);
+    throw new Error('User not found');
+  }
+
+  // Update lastSeen
+  await User.findByIdAndUpdate(decoded.id, { lastSeen: new Date() });
+  next();
+});
+
+export const admin = asyncHandler(async (req, res, next) => {
+  if (req.user && req.user.role === 'admin') {
+    next();
+  } else {
+    res.status(403);
+    throw new Error('Not authorized as admin');
+  }
+});
+
+export const optionalAuth = asyncHandler(async (req, res, next) => {
+  let token;
+  if (req.headers.authorization?.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = await User.findById(decoded.id).select('-password');
+    } catch {
+      // Not authenticated — that's fine for optional
     }
-
-    // Explicitly execute the next middleware or route controller function down the chain
-    return next();
-  } catch (error) {
-    console.error('JWT validation error:', error);
-    return res.status(401).json({ message: 'Session expired or invalid token structure.' });
   }
-};
+  next();
+});

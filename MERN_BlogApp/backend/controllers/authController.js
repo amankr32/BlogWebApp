@@ -1,95 +1,82 @@
 import User from '../models/User.js';
-import jwt from 'jsonwebtoken';
+import { generateToken } from '../utils/generateToken.js';
+import asyncHandler from '../utils/asyncHandler.js';
 
-// Generate Token Utility Function
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
-};
-
-// @desc    Register a new user
+// @desc    Register user
 // @route   POST /api/auth/register
-export const registerUser = async (req, res) => {
-  const { username, email, password } = req.body;
+// @access  Public
+export const registerUser = asyncHandler(async (req, res) => {
+  const { username, email, password, name } = req.body;
 
-  try {
-    // Validate required fields
-    if (!username || !email || !password) {
-      return res.status(400).json({ message: 'Username, email, and password are required' });
-    }
+  const userExists = await User.findOne({
+    $or: [{ email: email.toLowerCase() }, { username: username.trim() }],
+  });
 
-    // Validate username length
-    if (username.length < 3) {
-      return res.status(400).json({ message: 'Username must be at least 3 characters long' });
-    }
+  if (userExists) {
+    res.status(400);
+    throw new Error(
+      userExists.email === email.toLowerCase() ? 'Email already registered' : 'Username already taken'
+    );
+  }
 
-    // Validate email format
-    const emailRegex = /\S+@\S+\.\S+/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ message: 'Please provide a valid email address' });
-    }
+  const user = await User.create({
+    username: username.trim(),
+    email: email.toLowerCase(),
+    password,
+    name: name || username,
+    avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${username}`,
+  });
 
-    // Validate password length
-    if (password.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
-    }
-
-    const userExists = await User.findOne({ $or: [{ email: email.toLowerCase() }, { username }] });
-    if (userExists) {
-      return res.status(400).json({ message: 'Username or Email identity already registered' });
-    }
-
-    const user = await User.create({ username, email: email.toLowerCase(), password });
-    
-    return res.status(201).json({
+  res.status(201).json({
+    success: true,
+    data: {
       _id: user._id,
       username: user.username,
       email: user.email,
-      token: generateToken(user._id),
-    });
-  } catch (error) {
-    // Handle MongoDB duplicate key error
-    if (error.code === 11000) {
-      const field = Object.keys(error.keyPattern)[0];
-      return res.status(400).json({ message: `${field} already exists` });
-    }
-    return res.status(500).json({ message: error.message });
-  }
-};
+      name: user.name,
+      avatar: user.avatar,
+      bio: user.bio,
+      role: user.role,
+    },
+    token: generateToken(user._id),
+  });
+});
 
-// @desc    Authenticate user & get token
+// @desc    Login user
 // @route   POST /api/auth/login
-export const loginUser = async (req, res) => {
+// @access  Public
+export const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  try {
-    // Validate required fields
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
-    }
+  const user = await User.findOne({ email: email.toLowerCase() });
+  if (!user || !(await user.matchPassword(password))) {
+    res.status(401);
+    throw new Error('Invalid email or password');
+  }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
-
-    const isPasswordValid = await user.matchPassword(password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
-
-    return res.json({
+  res.json({
+    success: true,
+    data: {
       _id: user._id,
       username: user.username,
       email: user.email,
-      token: generateToken(user._id),
-    });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-};
+      name: user.name,
+      avatar: user.avatar,
+      bio: user.bio,
+      role: user.role,
+      bookmarks: user.bookmarks,
+    },
+    token: generateToken(user._id),
+  });
+});
 
 // @desc    Get current user profile
 // @route   GET /api/auth/me
-export const getMe = async (req, res) => {
-  return res.status(200).json(req.user);
-};
+// @access  Private
+export const getMe = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id)
+    .select('-password')
+    .populate('bookmarks', 'title slug coverImage excerpt');
+
+  res.json({ success: true, data: user });
+});

@@ -1,61 +1,70 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import mongoSanitize from 'express-mongo-sanitize';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import { errorHandler, notFound } from './middleware/errorMiddleware.js';
 
-// Init environment configurations
 dotenv.config();
-
-// Fire database pipeline
 connectDB();
 
 const app = express();
 
-// Middlewares
+// Security Middleware
+app.use(helmet());
+app.use(mongoSanitize());
+
+// Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { message: 'Too many requests, please try again later.' },
+});
+app.use('/api/', limiter);
+
+// Auth-specific stricter rate limit
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { message: 'Too many login attempts, please try again later.' },
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+
+// CORS
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
-app.use(express.json({ limit: '10mb' })); // Parses body parameters cleanly
+
+// Body Parsers
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// Security headers
-app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  next();
-});
-
-// Core Application API Routes Map
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/blogs', blogRoutes);
+app.use('/api/users', userRoutes);
 
-// Health check endpoint
+// Health Check
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString(), env: process.env.NODE_ENV });
 });
 
-// Fallback Route handler for 404 targets
-app.use((req, res, next) => {
-  res.status(404).json({ message: `Route path not found - ${req.originalUrl}` });
-});
-
-// Central Global Runtime Catch-All Error Middleware
-app.use((err, req, res, next) => {
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-  res.status(statusCode).json({
-    message: err.message,
-    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
-  });
-});
+// Error Handlers
+app.use(notFound);
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-
 app.listen(PORT, () => {
-  console.log(`📡 Backend cluster serving active requests on port ${PORT}`);
+  console.log(`🚀 InkFlow API running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
 });
+
+export default app;

@@ -1,90 +1,237 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import API from '../services/api';
-import { CardSkeleton } from '../components/SkeletonLoader';
-import { Calendar, User, Hash } from 'lucide-react';
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
+import { blogAPI } from "../services/api";
+import BlogCard from "../components/blog/BlogCard";
+import { BlogCardSkeleton } from "../components/ui/Skeletons";
+import {
+  Search,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  SlidersHorizontal,
+} from "lucide-react";
+import { CATEGORIES, SORT_OPTIONS } from "../utils";
+import { useDebounce } from "../hooks";
 
 const Blogs = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
+  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [category, setCategory] = useState(
+    searchParams.get("category") || "All",
+  );
+  const [sort, setSort] = useState("createdAt:desc");
+
+  const debouncedSearch = useDebounce(search, 450);
+  const page = parseInt(searchParams.get("page") || "1");
+
+  const fetchBlogs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [sf, so] = sort.split(":");
+      const { data } = await blogAPI.getAll({
+        page,
+        limit: 9,
+        sort: sf,
+        order: so,
+        ...(debouncedSearch && { search: debouncedSearch }),
+        ...(category !== "All" && { category }),
+      });
+      setBlogs(data.data || []);
+      setPagination(data.pagination || { page: 1, pages: 1, total: 0 });
+    } catch {
+      setBlogs([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, debouncedSearch, category, sort]);
 
   useEffect(() => {
-    const fetchBlogs = async () => {
-      try {
-        const { data } = await API.get('/blogs');
-        setBlogs(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchBlogs();
-  }, []);
+  }, [fetchBlogs]);
+
+  useEffect(() => {
+    const p = {};
+    if (debouncedSearch) p.search = debouncedSearch;
+    if (category !== "All") p.category = category;
+    if (page > 1) p.page = page;
+    setSearchParams(p, { replace: true });
+  }, [debouncedSearch, category, page]);
+
+  const handleCategory = (cat) => {
+    setCategory(cat);
+    setSearchParams({}, { replace: true });
+  };
+
+  const handlePage = (n) => {
+    setSearchParams((p) => {
+      p.set("page", n);
+      return p;
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const clearFilters = () => {
+    setSearch("");
+    setCategory("All");
+    setSort("createdAt:desc");
+    setSearchParams({});
+  };
+
+  const hasFilters = search || category !== "All" || sort !== "createdAt:desc";
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-16 animate-fade-in">
-      <div className="mb-12">
-        <h2 className="font-sans text-3xl font-bold tracking-tight text-white mb-2">Engineering Stream</h2>
-        <p className="text-saas-muted text-sm">Dispatches, theoretical reviews, and computational workflows from the network ecosystem.</p>
+    <div className="min-h-screen">
+      {/* Page header */}
+      <div className="border-b border-[--color-border] bg-[--color-surface]/50">
+        <div className="container-page py-8">
+          <h1 className="text-3xl font-black text-white mb-6 tracking-tight">
+            Explore Articles
+          </h1>
+
+          <div className="flex flex-col sm:flex-row gap-3 mb-5">
+            <div className="relative flex-1">
+              <Search
+                size={15}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-[--color-text-muted]"
+              />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search articles, tags, topics…"
+                className="input !pl-11"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[--color-text-muted] hover:text-white transition-colors"
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="input !w-auto min-w-[140px] cursor-pointer"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            {hasFilters && (
+              <button
+                onClick={clearFilters}
+                className="btn-ghost gap-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+              >
+                <X size={14} /> Clear
+              </button>
+            )}
+          </div>
+
+          {/* Category pills */}
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => handleCategory(cat)}
+                className={`flex-shrink-0 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  category === cat
+                    ? "bg-white text-black"
+                    : "bg-[--color-card] border border-[--color-border] text-[--color-text-secondary] hover:text-white hover:border-[--color-border-strong]"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {loading ? (
-        <div>{[1, 2, 3].map((n) => <CardSkeleton key={n} />)}</div>
-      ) : blogs.length === 0 ? (
-        <div className="text-center py-20 border border-dashed border-saas-border rounded-xl text-saas-muted font-mono text-sm">
-          No document packets indexed inside the primary operational cluster nodes.
-        </div>
-      ) : (
-        <div className="space-y-10">
-          {blogs.map((blog) => (
-            <article key={blog._id} className="group relative border-b border-saas-border/60 pb-10 transition-all duration-300 last:border-0">
-              <Link to={`/blog/${blog.slug}`} className="block">
-                <div className="flex flex-col sm:flex-row gap-8 items-start justify-between">
-                  <div className="flex-1 min-w-0 order-2 sm:order-1">
-                    <div className="flex items-center gap-3 text-xs font-mono text-saas-muted mb-3">
-                      <span className="flex items-center gap-1 text-gray-300">
-                        <User size={12} /> {blog.author?.username || 'Core Operator'}
-                      </span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1">
-                        <Calendar size={12} /> {new Date(blog.createdAt).toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}
-                      </span>
-                    </div>
+      {/* Results */}
+      <div className="container-page py-10">
+        {!loading && (
+          <p className="text-xs text-[--color-text-muted] font-mono mb-6">
+            {pagination.total > 0
+              ? `${pagination.total} articles${category !== "All" ? ` in ${category}` : ""}${search ? ` matching "${search}"` : ""}`
+              : "No articles found"}
+          </p>
+        )}
 
-                    <h3 className="font-sans text-2xl font-bold text-white group-hover:text-neutral-300 transition-colors duration-200 tracking-tight leading-snug mb-3">
-                      {blog.title}
-                    </h3>
+        {loading ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <BlogCardSkeleton key={n} />
+            ))}
+          </div>
+        ) : blogs.length === 0 ? (
+          <div className="text-center py-24 border border-dashed border-[--color-border] rounded-2xl">
+            <Search
+              size={36}
+              className="mx-auto text-[--color-text-muted] mb-4 opacity-30"
+            />
+            <h3 className="font-bold text-white mb-2">No articles found</h3>
+            <p className="text-sm text-[--color-text-muted] mb-6">
+              {hasFilters
+                ? "Try adjusting your search or filters."
+                : "Be the first to publish!"}
+            </p>
+            {hasFilters && (
+              <button onClick={clearFilters} className="btn-secondary">
+                Clear filters
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {blogs.map((b) => (
+              <BlogCard key={b._id} blog={b} />
+            ))}
+          </div>
+        )}
 
-                    <p className="text-saas-muted text-sm md:text-base font-sans line-clamp-2 leading-relaxed mb-4">
-                      {blog.excerpt}
-                    </p>
-
-                    <div className="flex flex-wrap gap-2">
-                      {blog.tags?.map((t) => (
-                        <span key={t} className="inline-flex items-center gap-0.5 bg-saas-surface border border-saas-border px-2 py-0.5 rounded text-xs font-mono text-gray-400 group-hover:border-zinc-700 duration-200">
-                          <Hash size={10} />{t}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {blog.coverImage && (
-                    <div className="w-full sm:w-44 h-28 rounded-lg overflow-hidden border border-saas-border bg-saas-surface shrink-0 order-1 sm:order-2 group-hover:border-neutral-700 duration-300">
-                      <img 
-                        src={blog.coverImage} 
-                        alt="" 
-                        className="w-full h-full object-cover filter grayscale contrast-[1.1] brightness-[0.85] group-hover:grayscale-0 group-hover:scale-105 group-hover:brightness-100 transition-all duration-500"
-                        loading="lazy"
-                      />
-                    </div>
-                  )}
-                </div>
-              </Link>
-            </article>
-          ))}
-        </div>
-      )}
+        {/* Pagination */}
+        {pagination.pages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-12">
+            <button
+              onClick={() => handlePage(page - 1)}
+              disabled={page === 1}
+              className="btn-ghost !p-2 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft size={17} />
+            </button>
+            <div className="flex gap-1">
+              {Array.from(
+                { length: Math.min(pagination.pages, 7) },
+                (_, i) => i + 1,
+              ).map((n) => (
+                <button
+                  key={n}
+                  onClick={() => handlePage(n)}
+                  className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
+                    page === n
+                      ? "bg-white text-black"
+                      : "text-[--color-text-secondary] hover:bg-white/5"
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => handlePage(page + 1)}
+              disabled={page === pagination.pages}
+              className="btn-ghost !p-2 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronRight size={17} />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

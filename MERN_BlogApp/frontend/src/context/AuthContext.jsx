@@ -1,43 +1,57 @@
-import { createContext, useState, useEffect } from 'react';
-import API from '../services/api';
 
-export const AuthContext = createContext();
+import { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import { authAPI } from '../services/api';
+
+export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser]       = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Restore session on mount
   useEffect(() => {
-    const checkUserLoggedIn = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const { data } = await API.get('/auth/me');
-          setUser(data);
-        } catch (error) {
-          console.error("Session verification failed");
-          localStorage.removeItem('token');
-          setUser(null);
-        }
+    const restore = async () => {
+      const token = localStorage.getItem('inkflow_token');
+      if (!token) { setLoading(false); return; }
+      try {
+        const { data } = await authAPI.me();
+        setUser(data.data || data);
+      } catch {
+        localStorage.removeItem('inkflow_token');
+        localStorage.removeItem('inkflow_user');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
-    checkUserLoggedIn();
+    restore();
   }, []);
 
-  const login = (userData, token) => {
-    localStorage.setItem('token', token);
+  const login = useCallback((userData, token) => {
+    localStorage.setItem('inkflow_token', token);
+    localStorage.setItem('inkflow_user', JSON.stringify(userData));
     setUser(userData);
-  };
+  }, []);
 
-  const logout = () => {
-    localStorage.removeItem('token');
+  const logout = useCallback(() => {
+    localStorage.removeItem('inkflow_token');
+    localStorage.removeItem('inkflow_user');
     setUser(null);
-  };
+  }, []);
+
+  const updateUser = useCallback((updates) => {
+    setUser(prev => ({ ...prev, ...updates }));
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
       {!loading && children}
     </AuthContext.Provider>
   );
 };
+
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
+  return ctx;
+};
+

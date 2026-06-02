@@ -9,7 +9,7 @@ import Home from './pages/Home';
 import Blogs from './pages/Blogs';
 import SingleBlog from './pages/SingleBlog';
 import AuthPage from './pages/AuthPage';
-import BlogForm from './pages/BlogForm';
+import BlogForm from './pages/BlogCard';
 import Dashboard from './pages/Dashboard';
 
 // SNIPPET 1: Imported Public Member Profile Page View
